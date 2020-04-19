@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Learn the Bitcoin system implementation with JavaScript code snippets for Node.js</title>
+
+<meta name="description" content="This paper is a technical introduction to the Bitcoin electronic cash system. It presents the design principles of transactions and blockchain. It is based on the Satoshi Nakamoto's paper and the Wiki site of the Bitcoin community. The mechanisms are illustrated with JavaScript code snippets for Node.js"/>
+<meta name="robots" content="index, follow" />
+
+<meta property="og:title" content="Learn the Bitcoin system implementation with JavaScript code snippets for Node.js"/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://pascalpares.appspot.ovh/an-introduction-to-the-bitcoin-system"/>
+<meta property="og:description" content="This paper is a technical introduction to the Bitcoin electronic cash system. It presents the design principles of transactions and blockchain. It is based on the Satoshi Nakamoto's paper and the Wiki site of the Bitcoin community. Some mechanisms are illustrated with JavaScript code for Node.js."/>
+
+<meta name="twitter:title" content="Learn the Bitcoin system implementation with JavaScript code snippets for Node.js"/>
+<meta name="twitter:description" content="This paper is a technical introduction to the Bitcoin electronic cash system. It presents the design principles of transactions and blockchain. It is based on the Satoshi Nakamoto's paper and the Wiki site of the Bitcoin community. Some mechanisms are illustrated with JavaScript code for Node.js."/>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+
+#text {
+    font-family: Arial,Helvetica,sans-serif;
+    font-size: 1rem;
+    color: #060606;
+    line-height: 1.5;
+ 
+    max-width: 48rem;
+    margin: auto;
+    padding: 1rem 2rem 1rem 2rem;
+}
+
+h1 {
+    border-bottom: 1px solid rgb(161,161,161);
+    padding-top: 30px;
+    font-size: 24px;
+}
+
+blockquote {
+    border-left-style: solid;
+    border-left-color: lightgrey;
+    padding-left:10px;
+    background-color: rgb(245, 247, 249);    
+}
+
+pre {
+    background-color: rgb(245, 247, 249);    
+    overflow-x: auto;
+}    
+
+pre {
+    font-size: 1rem;
+}
+
+pre {
+  font-family: monospace;
+  background-color: #fff;
+  margin: auto auto;
+  padding: 0.5em;
+  border-radius: .25em;
+  box-shadow: 0.1em 0.1em 0.5em rgba(0, 0, 0, 0.45);
+  line-height: 0;
+  counter-reset: line;
+}
+
+pre span {
+  display: block;
+  line-height: 1.5rem;
+}
+
+pre span:before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  border-right: 1px solid #ddd;
+  padding: 0 .5em;
+  margin-right: .5em;
+  width: 20px;
+  color: #888;
+  text-align: right;
+}
+
+img {
+    overflow-x: auto;
+    width:auto;
+    max-width:100%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;    
+}    
+
+table {
+    border-spacing: 0;
+}
+
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+</style>
+
+</head>
+<body id="text">
+
+<div style="font-size:32px;font-weight:700;text-align:center;">Learn the Bitcoin system implementation with JavaScript code snippets for Node.js</div>
+<h3 style="text-align:center;">Pascal Pares <a href="https://www.linkedin.com/in/pascalpares/">(contact)</a></h3>
+<h1>Summary</h1>
+<ul>
+    <li><a  href="#Introduction">Introduction</a></li>
+    <li><a  href="#Objective">Objective</a></li>
+    <li><a  href="#The Bitcoin Network">The Bitcoin Network</a>
+        <ul>    
+            <li><a  href="#peer-to-peer">A peer to peer network</a></li>
+            <li><a  href="#messages">The messages</a></li>
+            <li><a  href="#agents">A multiple agents system</a></li>
+            </ul>
+    </li>        
+    <li><a  href="#The Timestamp Token">The Timestamp Token</a>
+        <ul>    
+            <li><a  href="#hash">Cryptographic hash function</a></li>
+            <li><a  href="#sha256">SHA-256 algorithm</a></li>
+            <li><a  href="#nonce">Nonce</a></li>
+            <li><a  href="#proof">Proof-of-work</a></li>
+            <li><a  href="#target">Target of Proof-of-work</a></li>
+            <li><a  href="#difficulty">Difficulty index</a></li>
+            <li><a  href="#adjusting">Adjusting the proof-of-work</a></li>
+            <li><a  href="#token">Calculating the timestamp token</a></li>
+        </ul>
+    </li>    
+    <li><a  href="#The Blockchain">The Blockchain</a>
+        <ul>    
+            <li><a  href="#agents2">Timestamp agents</a></li>
+            <li><a  href="#miners">Miners</a></li>
+            <li><a  href="#incentive">Incentive</a></li>
+            <li><a  href="#consensus">Consensus</a></li>
+            <li><a  href="#regulation">Self regulation</a></li>
+        </ul>
+    </li>    
+    <li><a  href="#The Transactions">The Transactions</a>
+        <ul>    
+            <li><a  href="#Serialization">Serialization</a></li>
+            <li><a  href="#Hash of a transaction">Hash of a transaction</a>
+                <ul>
+                    <li><a  href="#Algorithm">Algorithm</a></li>
+                    <li><a  href="#Transaction ID">Transaction ID</a></li>
+                </ul>
+            </li>
+            <li><a  href="#Digital signature">Digital signature</a>
+                <ul>
+                    <li><a  href="#Cryptographic keys">Cryptographic keys</a></li>
+                    <li><a  href="#Bitcoin address">Bitcoin address</a></li>
+                    <li><a  href="#Digital signature2">Digital signature</a></li>
+                    <li><a  href="#Distinguished Encoding Rules">Distinguished Encoding Rules</a></li>
+                </ul>
+            </li>
+            <li><a  href="#Structure of a transaction">Structure of a transaction</a>
+                <ul>
+                    <li><a  href="#Assets">Assets</a></li>
+                    <li><a  href="#Input and output tables">Input and output tables</a></li>
+                    <li><a  href="#Combining and splitting assets">Combining and splitting assets</a></li>
+                    <li><a  href="#Initial transaction">Initial transaction</a></li>
+                    <li><a  href="#Electronic wallet">Electronic wallet</a></li>
+                </ul>
+            </li>
+            <li><a  href="#Scripts">Scripts</a>
+                <ul>
+                    <li><a  href="#Stack based virtual machine">Stack based virtual machine</a></li>
+                    <li><a  href="#Script Compilation">Script Compilation</a></li>
+                    <li><a  href="#Script execution">Script execution</a></li>
+                </ul>
+            </li>    
+            <li><a  href="#Verify a payment">Verify a payment</a>
+                <ul>    
+                    <li><a  href="#Hash type">Hash type</a></li>
+                    <li><a  href="#Running the verification">Running the verification</a></li>
+                </ul>    
+            </li>    
+            <li><a  href="#Code to verify a payment of block #266632">Code to verify a payment of block #266632</a></li>
+        </ul>
+    </li>    
+    <li><a  href="#Double-spending Fraud">Double-spending Fraud</a>
+        <ul>    
+            <li><a  href="#principle">Principle</a></li>
+            <li><a  href="#prevention">Prevention</a></li>
+            <li><a  href="#merkle-tree">The Merkle Tree</a></li>
+            <li><a  href="#merkle-path">The Merkle Path</a></li>
+        </ul>
+    </li>
+</ul>
+    
+<h1  id="Introduction">Introduction</h1>
+<p>This paper is a technical introduction to the Bitcoin electronic cash system. It presents the design principles of transactions and blockchain. It is based on the <a target="_blank" rel="noopener noreferrer" href="http://nakamotoinstitute.org/bitcoin/">Satoshi Nakamoto's paper</a> and the <a target="_blank" rel="noopener noreferrer" href="https://en.bitcoin.it">Wiki site</a> of the <a target="_blank" rel="noopener noreferrer" href="https://bitcoin.org">Bitcoin community</a>.</p>
+
+<p>Some mechanisms are illustrated with JavaScript code for Node.js. We do not intend with these code snippets to provide an implementation for production, but to help any reader with a basic programming knowledge to understand the main features.</p>
+
+<p>This article is written as a kind of tutorial, to go further, we recommend a more formalized article by Krzysztof Okupski: <a target="_blank" rel="noopener noreferrer" href="https://github.com/minium/Bitcoin-Spec/raw/master/Bitcoin.pdf">Bitcoin Developer Reference</a>.</p>
+
+<strong>Revision history</strong>:
+
+<ul>
+<li>February 7, 2017: First publication as a draft</li>
+<li>February 11, 2017: First publication</li>
+<li>February 18, 2017: Text review</li>
+<li>February 26, 2017: Second publication</li>
+<li>March 6, 2017: <em>Bitcoin address</em> section review</li>
+<li>April 9, 2017: Additional code snippets for <em>target</em> and <em>difficulty index</em> in section <em>The Blocks</em></li>
+<li>November 1, 2017: Minor changes</li>
+<li>April 8, 2018: Text review, additional Merkle Tree section</li>
+</ul>
+
+<h1  id="Objective">Objective</h1>
+<p>The objective expressed in <a target="_blank" rel="noopener noreferrer" href="http://nakamotoinstitute.org/bitcoin/">Satoshi Nakamoto's paper</a> is to provide an electronic currency without intermediary institutions: neither trusted third party for the payment, nor a supervisory authority for monetary creation. It relies on a public ledger of transactions with an infalsifiable recording that can be verified by all, but whose stakeholders remain anonymous. The context for applying this currency is e-commerce on the Internet.</p>
+
+<p>To realize this system, the main challenge is to replace a central server by a network of agents who pool their resources to create a decentralized time-stamping system of transactions, in order to obtain a sequential and non-contestable record of transactions. It must in particular prevent the fraud of double-spending, which consists of using the same bitcoins to pay simultaneously two payees.</p>
+
+<h1  id="The Bitcoin Network">The Bitcoin Network</h1>
+<h3  id="peer-to-peer">A peer to peer network</h3>
+
+<p>The Bitcoin network is the internet network used as a peer-to-peer network. All participants in the Bitcoin network have the same status; no participant can claim any higher legitimacy. Each participant is considered as a peer to the others.</p>
+
+<h3  id="messages">The messages</h3>
+
+<p>Two main types of messages are broadcasted as widely as possible on the Internet:</p>
+
+<ul>
+<li>the transaction, which represents a payment,</li>
+<li>the block, which records a collection of transactions.</li>
+</ul>
+
+<p>When a new transaction is signed, it is broadcasted on the Bitcoin network. It will then be collected and recorded in a block. Each block, once constituted, will in turn be broadcasted.</p>
+
+<p>All these messages are public and verifiable. They make it possible to notify and therefore take to witness all the participants of the Bitcoin network on any new information that enriches the blockchain.</p>
+
+<p>Messages are transferred over the network in a binary format, encoding numbers on 32 bits or 256 bits using the Little-Endian convention.</p>
+
+<blockquote>
+<p>The Little-Endian convention sets the bytes from the lowest weight to the strongest weight, the Big-Endian convention sets the bytes from the strongest weight to the lowest weight. For example the number 1 is represented in hexadecimal on 32 bits by 00000001 with the Big-Endian convention and 01000000 with the Little-Endian convention.</p>
+
+<p>The number 1 on 32 bits with the Big-Endian convention:</p>
+
+<pre><code><span>  Byte 3 |  Byte 2 |  Byte 1 |  Byte 0</span>
+<span> --------+---------+---------+--------</span>
+<span>      00 |     00  |     00  |      01</span>
+</code></pre>
+
+<p>The number 1 on 32 bits with the Little-Endian convention:</p>
+
+<pre><code><span>  Byte 0 |  Byte 1 |  Byte 2 |  Byte 3</span>
+<span> --------+---------+---------+--------</span>
+<span>      01 |      00 |      00 |      00</span>
+</code></pre>
+</blockquote>
+
+<h3  id="agents">A multiple agents system</h3>
+
+<p>Each participant in the network uses a free open-source software that is both:</p>
+
+<ul>
+<li>a graphical user interface to manage a bitcoins wallet, i.e. a balance in bitcoins, and to make payments;</li>
+<li>an autonomous agent, that is to say a "bot" which reacts to the messages received from the other agents.</li>
+</ul>
+<p>The role of agents is to support this peer-to-peer network:</p>
+<ul>
+<li><strong>Broadcast messages</strong> by propagation. When connecting to the network, each agent randomly selects a pool of contact agents and distributes each received message to its contacts, which in turn will relay the message until it reaches all connected agents step by step. This mechanism offers high reliability, if messages are lost or delayed by some, they will still be propagated.</li>
+<li><strong>Copy locally the blockchain which is a transaction ledger</strong>, so that each participant can know the state of the blockchain, and inform his peers, so that anyone can leave or join the network at any time.</li>
+<li><strong>Implement the Bitcoin protocol</strong>.</li>
+</ul>
+<p>Some participants may use the software in a lightweight mode. They will not store a full instance of the blockchain. They should query the other agents to obtain a partial view of the blocks, in order to verify transactions for payments they receive (simple payment verification).</p>
+
+<h1  id="The Timestamp Token">The Timestamp Token</h1>
+<p>To prevent any fraud, the transactions must be registered in an uncontestable and immutable order. As transaction containers, the blocks themselves must be chronologically ordered. This order is certified by the timestamp token attached on each block.</p>
+
+<p>The calculation of the timestamp token has three main characteristics:</p>
+<ul>
+<li>the timestamp token is a result of the hash of a block content;</li>
+<li>the calculation of a timestamp token takes a long time (around 10 minutes on average);</li>
+<li>each timestamp token is calculated with the timestamp token of the previous block, and therefore links each block to the previous one to form the blockchain. </li>
+</ul>
+<p>Therefore, any change of a block would invalidate the timestamp token, and would require a new calculation of the timestamp token. Since each timestamp token is computed with the timestamp token of the previous block, it would also be necessary to update the following blocks, thus to recalculate all following timestamp tokens. Thus the timestamp token reduces the risk of rewriting a block, inserting a block, or removing a block as blocks are added.</p>
+
+<h3  id="hash">Cryptographic hash function</h3>
+
+<p>A cryptographic hash function transforms an input message into a digital code, called the hash code of the message. This hash code reflects the message itself. The same hash function applied to an altered message will produce another code distinct from the previous one.</p>
+
+<h3  id="sha256">SHA-256 algorithm</h3>
+
+<p>SHA-256 (Secured Hash Algorithm) specifies a hash method which result is a big number encoded on 256 bits. It is considered as secured, because an alteration of a single bit of the message will produce another distinct hash code, and attempting to alter a message in order to get a specific hash code would require too many attempts.</p>
+
+<p>The <em>sha256</em> function below applies the SHA-256 algorithm to the message, as a binary buffer, the result is displayed with an hexadecimal representation:</p>
+
+<pre><code><span>// Calculate a hash code from a binary buffer</span>
+<span>var crypto = require("crypto");</span>
+<span>var sha256= function(buffer) { </span>
+<span>    var f = crypto.createHash('sha256'); </span>
+<span>    var h = f.update(buffer);</span>
+<span>    return h.digest(); </span>
+<span>};</span>
+<span></span>
+<span>> var message = new Buffer('hello world');</span>
+<span>> var hashCode = sha256(message);</span>
+<span>> hashCode.toString('hex');</span>
+<span>'b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9'</span>
+</code></pre>
+
+<h3  id="nonce">Nonce</h3>
+
+<p>A nonce is an arbitrary value attached to a message to influence the resulting hash code. The hash function is applied to the message concatenated to a nonce, which is a 32-bit number encoded with the Little-Endian convention.</p>
+
+<p>In the code below, we represent the nonce with a byte buffer, regardless of the processor-specific Little-Endian / Big-Endian convention, and then we concatenate the message to the nonce to get a new hash code.</p>
+
+<pre><code><span>var numberToInt32LE = function (n) {</span>
+<span>    var buffer = new Buffer(4);</span>
+<span>    buffer.writeUInt32LE(n,0);</span>
+<span>    return buffer;</span>
+<span>};</span>
+<span></span>
+<span>> var nonce = numberToInt32LE (1000);</span>
+<span>> nonce.toString('hex');</span>
+<span>'e8030000'</span>
+<span></span>
+<span>> var message = new Buffer('hello world');</span>
+<span>> var hashCode = sha256(Buffer.concat([message,nonce]));</span>
+<span>> hashCode.toString('hex');</span>
+<span>'51b2583117a8e0c8551883127bba6bdc3fe6603ac58ce4ad5c1c2a6def9be485'</span>
+</code></pre>
+
+<h3  id="proof">Proof-of-work</h3>
+
+<p>Proof of work aims:</p>
+<ul>
+<li>to make difficult to calculate the timestamp token by requiring processor execution time ; and then to prevent any subsequent alteration of blocks, or the substitution of one block for another block;</li>
+<li>to make the time necessary for this calculation to be random (see the principle of consensus).</li>
+</ul>
+<p>The SHA-256 algorithm produces a number that can be represented on 256 bits, so a number between 0 and 2<sup>256</sup> - 1.  </p>
+<p>If the hash function based on the SHA-256 algorithm is considered as a pseudo-random function, the probability to get a number starting with N bits at 0 is  1 / (2<sup>N</sup>). This is equivalent to split the interval of numbers from 0 to 2<sup>256</sup> - 1, into 2, 4, 8, ... 2<sup>N</sup> segments, and evaluating the probability of obtaining a number of the first segment.</p>
+
+<p>The table below gives a sample of some probabilities:</p>
+
+<table>
+<tr><td>Number of bits at zero</td><td>Probability</td></tr>
+<tr><td style="text-align: right;">1</td><td style="text-align: right;">1 / 2</td></tr>
+<tr><td style="text-align: right;">2</td><td style="text-align: right;">1 / 4</td></tr>
+<tr><td style="text-align: right;">3</td><td style="text-align: right;">1 / 8</td></tr>
+<tr><td style="text-align: right;">4</td><td style="text-align: right;">1 / 16</td></tr>
+<tr><td style="text-align: right;">5</td><td style="text-align: right;">1 / 32</td></tr>
+<tr><td style="text-align: right;">16</td><td style="text-align: right;">1 / 65,536</td></tr>
+</table>
+
+<p>A proof-of-work specifies the expected number N of bits at 0 for the hash code. To satisfy this constraint, one must look for a nonce, with a probability of success of 1 / (2<sup>N</sup>).  </p>
+<p>This search can be done simply by an iteration of the nonce until satisfying the constraint. This iteration will require processor execution time, a longer time as the probability of success will be low.</p>
+
+<p>To test the hash code, we will use the  <em>toReverseHexaNotation</em>  function which reverses the hexadecimal representation of a 32-bit or 256-bit encoded number with the Little-Endian convention.</p>
+
+<pre><code><span>Buffer.prototype.toReverseHexaNotation = function () {</span>
+<span>    var hexa = "";</span>
+<span>    for (var i = this.length-1; i >= 0; i--) {</span>
+<span>       var digits =  this[i].toString(16);</span>
+<span>        hexa += ("0" + digits).slice(-2); // Add "0" for single digit</span>
+<span>    }</span>
+<span>    return hexa;     </span>
+<span>};</span>
+<span></span>
+<span>/* Return a nonce value for a number of expected bits.</span>
+<span> * Warning: May take a while if the proof-of-work is difficult</span>
+<span> * proof is a string of '0' characters, each character is </span>
+<span> * a hexadecimal digit, so it is 4 zero-bits</span>
+<span> */   </span>
+<span>var calculateProofOfWork = function(proof, message) { </span>
+<span>   var len = proof.length; </span>
+<span>   for(var nonce=0;;nonce++){ </span>
+<span>        var nonceLE= numberToInt32LE(nonce);</span>
+<span>        var hashCode = sha256(Buffer.concat([message, nonceLE]));</span>
+<span>        var result = hashCode.toReverseHexaNotation();</span>
+<span>        if (result.substr(0, len) == proof)  </span>
+<span>            return nonceLE; </span>
+<span>    } </span>
+<span>};</span>
+<span></span>
+<span>> var message = new Buffer('hello world');</span>
+<span>> var nonce = calculateProofOfWork('00', message);</span>
+<span>> nonce.toString('hex');</span>
+<span>'0e000000'</span>
+</code></pre>
+
+<p>Once the value of the nonce is found, the verification of the proof-of-work is immediate:</p>
+
+<pre><code><span>> var hashCode = sha256(Buffer.concat([message, nonce]));</span>
+<span>> hashCode.toReverseHexaNotation();</span>
+<span>'003a669f5c15dd75046bae1661f6a7326bbb80ec217080bff5c97286dc03d7c6'</span>
+</code></pre>
+
+<p>The time and effort to find the nonce increases as the probability of success decreases:</p>
+
+<pre><code><span>var testProofOfWork = function (message, loops) {</span>
+<span>    var proof = "0";</span>
+<span>    for (var i = 0; i < loops; i++) {</span>
+<span>        var t1 = Date.now();</span>
+<span>        var nonce = calculateProofOfWork(proof, message);</span>
+<span>        var t2 = Date.now();</span>
+<span>        var hashCode = sha256(Buffer.concat([message, nonce]));</span>
+<span>        console.log ("hash:", hashCode.toReverseHexaNotation(),</span>
+<span>                     "nonce:", nonce.toReverseHexaNotation(), </span>
+<span>                     "elapsedTime:", t2-t1);</span>
+<span>        proof += "0";</span>
+<span>    }</span>
+<span>};</span>
+<span></span>
+<span>> testProofOfWork(message, 5); </span>
+<span>hash: 003a669f5c15dd75...80bff5c97286dc03d7c6 nonce: 0000000e elapsedTime: 1</span>
+<span>hash: 003a669f5c15dd75...80bff5c97286dc03d7c6 nonce: 0000000e elapsedTime: 1</span>
+<span>hash: 0001c1c7a764d470...76d596b136ef255ba911 nonce: 00001f0a elapsedTime: 254</span>
+<span>hash: 00008e8dc456ce49...a36d96dfafab3f18fba0 nonce: 0000fca8 elapsedTime: 1486</span>
+<span>hash: 000003aaa63ca127...35ba4de259c2625b617f nonce: 0008e973 elapsedTime: 12241</span>
+</code></pre>
+
+<h3  id="target">Target of Proof-of-work</h3>
+
+<p>The Bitcoin protocol has evolved the proof-of-work. It is no longer specified as a number of bits at 0 but as a maximum value that the hash code can reach. This maximum value is called the target.</p>
+
+<p>This target is represented in a compact form of 32 bits, called <em>bits</em>. This representation is based on the OpenSSL <em>BN_bn2mpi ()</em> and <em>BN_mpi2bn ()</em> functions:</p>
+<ul>
+<li>The 23 least significant bits represent a value.</li>
+<li>The 24th bit represents the negative sign.</li>
+<li>The most significant byte is used to specify the numbers of bytes to shift to left.</li>
+</ul>
+<p>The corresponding value is obtained by the following calculation:</p>
+
+<pre><code><span>var bigInt = require("big-integer");</span>
+<span></span>
+<span>var bitsToTarget = function (bits) {</span>
+<span>    bits = bigInt(bits);</span>
+<span>    var sign = bits.and(0x00800000).shiftRight(24).toJSNumber();</span>
+<span>    var exponent = bits.and(0xFF000000).shiftRight(24).toJSNumber();</span>
+<span>    var mantissa = bits.and(0x007FFFFF);</span>
+<span>    var target = mantissa.times(Math.pow(-1,sign)).shiftLeft(8 * (exponent-3));</span>
+<span>    return target;</span>
+<span>}</span>
+<span></span>
+<span>> bitsToTarget(0x04012345).toString(16);</span>
+<span>'1234500'</span>
+</code></pre>
+
+<p>The limit value chosen for the target, is the minimum effort of proof-of-work required, begins with 32 bits at 0:</p>
+
+<pre><code><span>0x00000000FFFF0000000000000000000000000000000000000000000000000000</span>
+</code></pre>
+
+<p>Or in its compact form on 32 bits:</p>
+
+<pre><code><span>0x1d00ffff</span>
+</code></pre>
+
+<h3  id="difficulty">Difficulty index</h3>
+
+<p>The difficulty index is calculated by the ratio of the limit value of the proof-of-work to the current target. This index gives an estimate of the computational effort required to satisfy the proof-of-work. The higher the index is, the greater the computational effort is. A value of the index equal to 1 corresponds to the minimum effort.</p>
+
+<pre><code><span>> var bigInt = require("big-integer");</span>
+<span>> var limit = bigInt("00000000FFFF0000000000000000000000000000000000000000000000000000",16);</span>
+<span>> var target = bigInt("00000000000404CB000000000000000000000000000000000000000000000000",16);</span>
+<span>> var difficultyIndex = limit.divide(target).toJSNumber();</span>
+<span>16307</span>
+</code></pre>
+
+<h3  id="adjusting">Adjusting the proof-of-work</h3>
+
+<p>The target of the proof-of-work must be adjusted so as to generate a block every 10 minutes on average.</p>
+
+<p>If a block is generated on average every 10 minutes, then over a period of 14 days, 2016 blocks must be generated (2016 blocks = 14 days x 24 hours x 6 blocks per hour). Thus every 2016 blocks, the target is adjusted by multiplying it by a factor. This factor is deduced from the difference in actual creation time of the 2016 blocks with the expected duration of 14 days. This adjustment take into account the processing power of the miners partipating to create the blockchain.</p>
+
+<h3  id="token">Calculating the timestamp token</h3>
+
+<p>The timestamp token of each block is calculated with the hash code of the concatenation of the elements of its header. This header consists of:</p>
+<ul>
+<li>the version number of the block structure ( <em>version</em> );</li>
+<li>the timestamp token of the previous block ( <em>previousToken</em> );</li>
+<li>the hashcode of the block content ( <em>merkleRootHash</em> );</li>
+<li>time stamping of the block on 32 bits ( <em>time</em> );</li>
+<li>the compact value of the work-proof target ( <em>bits</em> );</li>
+<li>the nonce which makes it possible to satisfy the proof-of-work ( <em>nonce</em> ).</li>
+</ul>
+
+<blockquote>The hash code of the contents of the block is calculated via a Merkle tree, the root of the Merkle tree is the hash code for all registered transactions.</blockquote>
+
+<pre><code><span>// Header from block 125552</span>
+<span>var header = {</span>
+<span>    version: 1,</span>
+<span>    previousToken: '00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81',</span>
+<span>    merkleRootHash: '2b12fcf1b09288fcaff797d71e950e71ae42b91e8bdb2304758dfcffc2b620e3',</span>
+<span>    time: new Date ("Sat May 21 2011 17:26:31 GMT+0000 (UTC)"),</span>
+<span>    bits: 440711666,</span>
+<span>    nonce: 2504433986</span>
+<span>};</span>
+</code></pre>
+
+<p>All elements in the header are considered as 32-bit or 256-bit numbers encoded with the Little-Endian convention. The  <em>serializeHeader</em>  function allows to compile this data in buffers, with the Little-Endian convention:</p>
+
+<pre><code><span>var serializeHeader = function (header) {</span>
+<span>  var buffers = [];</span>
+<span>  buffers.push (numberToInt32LE(header.version));</span>
+<span>  buffers.push (hexaNotationToInt256LE(header.previousToken));</span>
+<span>  buffers.push (hexaNotationToInt256LE(header.merkleRootHash));  </span>
+<span>  buffers.push (dateToInt32LE(header.time));    </span>
+<span>  buffers.push (numberToInt32LE(header.bits));  </span>
+<span>  buffers.push (numberToInt32LE(header.nonce));    </span>
+<span>  return Buffer.concat (buffers);</span>
+<span>};</span>
+<span></span>
+<span>var dateToInt32LE = function (date) {</span>
+<span>    var time = date.getTime() / 1000; // remove milliseconds</span>
+<span>    return numberToInt32LE(time);</span>
+<span>};</span>
+<span></span>
+<span>var hexaNotationToInt256LE = function (hexa) {</span>
+<span>    var bytes = new Array(32);</span>
+<span>    for (var i = 0, j = 31, len = hexa.length; i < len; i+=2, j--) {</span>
+<span>        bytes[j] = parseInt(hexa[i]+hexa[i+1],16);</span>
+<span>    }    </span>
+<span>    return new Buffer(bytes);</span>
+<span>};</span>
+<span></span>
+<span>> serializeHeader (header).toString('hex');</span>
+<span>'0100000081cd02ab7e569e8bcd9317e2fe99f2de44d49ab2b8851ba4a308000000000000e320b6c2fffc8d750423db8b1eb942ae710e951ed797f7affc8892b0f1fc122bc7f5d74df2b9441a42a14695'</span>
+<span>></span>
+</code></pre>
+
+<p>A first numerical hash code of a block is computed on the concatenation of the elements of the header, then a second hash code is calculated on this result, for historical reasons and by prevention. The effective timestamp token is this second hash code.</p>
+
+<pre><code><span>> var hashcode = sha256( sha256(serializeHeader (header) ) ); // hash twice</span>
+<span>> hashcode.toReverseHexaNotation();</span>
+<span>'00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d'</span>
+</code></pre>
+
+<p>We can check whether the target is reached:</p>
+
+<pre><code><span>var testProofOfWork = function (hashcode, target) {</span>
+<span>    return hashcode.lesser(target);</span>
+<span>}</span>
+<span>hashcode = bigInt(hashcode.toReverseHexaNotation(),16);  // transform to big integer</span>
+<span>var target = bitsToTarget(header.bits);</span>
+<span>> testProofOfWork(hashcode, target);</span>
+<span>true</span>
+</code></pre>
+
+<p>The genesis block header is special because the timestamp token of the previous block is 0.</p>
+
+<pre><code><span>// Header from block 0</span>
+<span>var header = {</span>
+<span>    version: 1,</span>
+<span>    previousToken: '0000000000000000000000000000000000000000000000000000000000000000',</span>
+<span>    merkleRootHash: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',</span>
+<span>    time: new Date ("Sat Jan 03 2009 18:15:05 GMT+0000 (UTC)"),</span>
+<span>    bits: 0x1d00ffff,</span>
+<span>    nonce: 2083236893</span>
+<span>};</span>
+<span></span>
+<span>> var hashcode = sha256( sha256(serializeHeader (header) ) ); // hash twice</span>
+<span>> hashcode.toReverseHexaNotation();</span>
+<span>'000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f'</span>
+</code></pre>
+<p>Is the target reached?</p>
+<pre><code>
+<span>> hashcode = bigInt(hashcode.toReverseHexaNotation(),16); // transform to big integer</span>
+<span>> var target = bitsToTarget(header.bits);</span>
+<span>ffff0000000000000000000000000000000000000000000000000000</span>
+<span>> testProofOfWork(hashcode, target);</span>
+<span>true</span>
+</code></pre>
+
+<h1  id="The Blockchain">The Blockchain</h1>
+<p>As the transactions on the network are transmitted, they are collected in blocks, these blocks are stacked to form the Blockchain. The top of the blockchain is the most recent block and the base is the first block created by Satoshi Nakamoto, on January 3, 2009, the "genesis" block.</p>
+
+<h3  id="agents2">Timestamp agents</h3>
+
+<p>A timestamp agent is in charge of</p>
+<ul>
+<li>collecting blocks broadcasted on the network in order to locally create its own blockchain instance, </li>
+<li>collecting transactions to create  a new block </li>
+<li>putting a timestamp token for new blocks. As soon as a timestamp token is calculated for a block, the agent broadcasts the block as widely as possible, so that the other agents adopt as soon as possible this block, and include it to their own instance of their blockchain. </li>
+</ul>
+<h3  id="miners">Miners</h3>
+
+<p>Miners are individuals or organizations that run timestamp agents. The calculation of the timestamp token of a block must satisfy a proof-of-work. The proof-of-work leads to a long and randomness time of calculation, and therefore sets the miners in competition to provide the next block of the blockchain.</p>
+
+<h3  id="incentive">Incentive</h3>
+
+<p>To encourage miners to invest resources and electricity to calculate the timestamp tokens, miners are empowered to add a special transaction to a block (the coinbase transaction). This transaction rewards the miner by levying fees on the transactions collected or by creating bitcoins ex-nihilo.</p>
+
+<h3  id="consensus">Consensus</h3>
+
+<p>Without supervisory authority, no-one is mandated to verify that each miner complies with the protocol. The protocol is in fact imposed by consensus.</p>
+
+<p>In the case of two blocks arrive almost simultaneously to a timestamp agent, two instances of blockchain are created in parallel. In this case, the protocol specifies that the timestamp agent keeps the two blockchain instances, but selects the first one to extend.</p>
+
+<p>The principle of consensus is to adopt the longest instance of the blockchain as soon as it appears. This instance will represent the largest investment in computing among the community of timestamp agents. As long as honest timestamp agents own more than 50% of the computing power of the network, the longest blockchain contains valid and safe transactions.</p>
+
+<p>Any dishonest agent who attempts to propose an alternative blockchain instance will be placed in minority by his peers. Indeed as each timestamp token is based on the previous block, it cannot add the new blocks coming from the majority group, and its own blocks will not be added to the longest blockchain.</p>
+
+<p>The longest blockchain instance then appears as the blockchain approved by consensus; and therefore recognized by the majority. If a payee ensures that the transaction is successfully recorded in a block followed by enough blocks, it will be assured that the transaction is indeed recorded in the longest blockchain instance approved by consensus; and will be retained. This is why a miner can not immediately dispose of the special transaction which rewards him for his work. This transaction becomes valid when enough blocks have been added after the block containing this transaction.</p>
+
+<p>The principle of consensus replaces a supervisory authority that ensures that every miner complies with the protocol. It can be noted here that the behavior of the majority of miners is law; even if this behavior is considered to be arbitrary (such as referring to the blockchain instance of the first block received) or even in some cases incorrect (if the majority of the miners use a defective software). It is not the specification of the protocol that matters but the implementation of the protocol by the software used by the majority of the miners. That's why to run the system, sharing a free and open source code is part of the solution.</p>
+
+<h3  id="regulation">Self regulation</h3>
+
+<p>The system is regulated according both to the traffic and the computational power of the timestamp agents.</p>
+
+<p>The adjustment of proof-of-work every 2016 blocks is a protocol rule. This adjustment aims to ensure that a block is emitted every 10 minutes on average. Like any consensus rule, if a miner does not respect this adjusted proof-of-work, it will be put in a minority, and its blocks will be rejected by the majority of agents. The frequency of 10 minutes matches a projection estimated in 2008 of the storage capacity of the computers in the following years, especially to keep the blocks headers in RAM. Indeed, a block header contains the input data required to calculate a timestamp token.</p>
+
+<p>Note that, if the difficulty of proof-of-work increases and requires more computing power, then individual miners can pool their resources.</p>
+
+<p>Finally, the number of transactions per block is induced by the fees levied on the transactions, used to fund the cost of electricity required by the proof of work. However, the maximum size of a block is set to 1 MB in order to guarantee a fast broadcast of the blocks on the network.</p>
+
+<h1  id="The Transactions">The Transactions</h1>
+<p>In this section, we present the most commonly used transactions (Pay to Public Key Hash).</p>
+
+<h3  id="Serialization">Serialization</h3>
+<p>A transaction is a structured message. This structured message has 2 representations:</p>
+<ul>
+<li>a binary format, used for hash calculation, signature and network transfer, </li>
+<li>an arbitrary source format, which is a JSON object in this paper. </li>
+</ul>
+<p>We call "serialization" the process of transforming a source format into the binary format. The binary format is the only "official" format. Indeed, the source format is out of scope of the protocol specification. Therefore, any process applicable to a transaction will be applied to this binary format.</p>
+
+<p>The conversion rules to serialize a source format into a binary format are as follow:</p>
+<ul>
+<li>most numbers are encoded with Little-Endian convention on 32 bits,</li>
+<li>a hash code is considered as a big number on 256 bits, encoded with Little-Endian convention,</li>
+<li>an amount is an integer on 64 bits, encoded with Little-Endian convention,</li>
+<li>an array starts with the number of entries, encoded on a byte, followed by a sequence of all entries,</li>
+<li>any other data starts with the size of the data encoded on a byte.</li>
+</ul>
+<p>The function <em>serializeTransaction</em> serializes a transaction represented with a JSON object into a buffer of bytes.</p>
+
+<pre><code><span>// an arbitrary structure</span>
+<span>var transaction = {</span>
+<span>    version: 1,</span>
+<span>    paymentOrder: "Alice promises to pay the sum of one Bitcoin to Bob"</span>
+<span>};</span>
+<span></span>
+<span>// convert an integer into a buffer of a single byte</span>
+<span>var numberToInt8 = function (n) {</span>
+<span>    return new Buffer([n]);</span>
+<span>};</span>
+<span></span>
+<span>// convert an integer into a buffer of 4 bytes using </span>
+<span>// Little-Endian convention</span>
+<span>var numberToInt32LE = function (n) {</span>
+<span>    var buffer = new Buffer(4);</span>
+<span>    buffer.writeUInt32LE(n,0);</span>
+<span>    return buffer;</span>
+<span>};</span>
+<span></span>
+<span>var serializeTransaction = function (transaction) {</span>
+<span>    var buffers = [];</span>
+<span>    buffers.push (numberToInt32LE(transaction.version));</span>
+<span>    buffers.push (numberToInt8(transaction.paymentOrder.length));</span>
+<span>    buffers.push (new Buffer(transaction.paymentOrder));</span>
+<span>    return Buffer.concat(buffers);</span>
+<span>};</span>
+<span></span>
+<span>> serializeTransaction (transaction).toString('hex');</span>
+<span>'0100000033416c6963652070726f6d6973657320746f2070617920746865</span>
+<span>2073756d206f66206f6e6520426974636f696e20746f20426f62'</span>
+</code></pre>
+
+<p>The resulting bytes are described below:</p>
+
+<pre><code>
+<span>|01 00 00 00| version as 32 bits Little-Endian</span>
+<span>|33         | 51 bytes for payment order</span>
+<span>|41 6c 69 63 65 20 70 72 6f 6d 69 73 65 73 20 74|Alice.promises.t|</span>
+<span>|6f 20 70 61 79 20 74 68 65 20 73 75 6d 20 6f 66|o.pay.the.sum.of|</span>
+<span>|20 6f 6e 65 20 42 69 74 63 6f 69 6e 20 74 6f 20|.one.Bitcoin.to.|</span>
+<span>|42 6f 62                                       |Bob|</span>
+</code></pre>
+
+<p>Some web sites display an hexadecimal notation of actual bitcoin binary messages, including transactions:</p>
+
+<a href="https://blockchain.info/tx/9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4?format=hex">https://blockchain.info/tx/9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4?format=hex</a>
+
+<h3  id="Hash of a transaction">Hash of a transaction</h3>
+<h4   id="Algorithm">Algorithm</h4>
+<p>A hash of a transaction is a double hash of the binary format of the transaction. Algorithm SHA-256 is applied twice, for historical reasons, and to increase safety.</p>
+
+<p>In the code below, we define the <em>sha256</em> hash function. We need to serialize the transaction into its binary format, before applying <em>sha256</em> function twice. We define also the <em>toReverseHexaNotation</em> function to display the hash code because a hash is considered as a big number using Little-Endian convention.</p>
+
+<pre><code><span>var crypto = require('crypto');</span>
+<span>var sha256 = function(buffer) { </span>
+<span>    var f = crypto.createHash("SHA256"); </span>
+<span>    var h = f.update(buffer);</span>
+<span>    return h.digest(); </span>
+<span>};</span>
+<span></span>
+<span>var hash = function (encodedTransaction) {</span>
+<span>    return sha256 (sha256 (encodedTransaction) );</span>
+<span>}</span>
+<span></span>
+<span>Buffer.prototype.toReverseHexaNotation = function () {</span>
+<span>    var hexa = "";</span>
+<span>    for (var i = this.length-1; i >= 0; i--) {</span>
+<span>        var digits =  this[i].toString(16);</span>
+<span>        hexa += ("0" + digits).slice(-2); // Add "0" for single digit</span>
+<span>    }</span>
+<span>    return hexa;     </span>
+<span>};</span>
+<span></span>
+<span>>  sha256 (sha256 (serializeTransaction (transaction))).toReverseHexaNotation();</span>
+<span>'3e1a51c876a14ea0c09e87d17418910fdc5fb2380af4d040f2b00c2a13906d1c'</span>
+</code></pre>
+
+<h4   id="Transaction ID">Transaction ID</h4>
+<p>The hash code of a transaction is named the <em>txid</em>. This transaction ID is used to refer a transaction.</p>
+
+<p>We introduce a <em>getTxid</em> function to get <em>txid</em> for our source format. We add also the <em>hexaNotationToInt256LE</em> function to get the binary format of the <em>txid</em>.</p>
+
+<pre><code><span>// calculate a txid for a source format,</span>
+<span>// return an hexa notation string for a source format</span>
+<span>var getTxid = function (transaction) {</span>
+<span>    var encodedTransaction = serializeTransaction (transaction);</span>
+<span>    return hash (encodedTransaction).toReverseHexaNotation();</span>
+<span>};</span>
+<span></span>
+<span>var txid = getTxid(transaction);</span>
+<span>> txid</span>
+<span>'3e1a51c876a14ea0c09e87d17418910fdc5fb2380af4d040f2b00c2a13906d1c'</span>
+<span></span>
+<span>var hexaNotationToInt256LE = function (hexa) {</span>
+<span>    var bytes = new Array(32);</span>
+<span>    for (var i = 0, j = 31, len = hexa.length; i < len; i+=2, j--) {</span>
+<span>        bytes[j] = parseInt(hexa[i]+hexa[i+1],16);</span>
+<span>    }    </span>
+<span>    return new Buffer(bytes);</span>
+<span>};</span>
+<span></span>
+<span>> hexaNotationToInt256LE(txid).toString('hex')</span>
+<span>'1c6d90132a0cb0f240d0f40a38b25fdc0f911874d1879ec0a04ea176c8511a3e'</span>
+</code></pre>
+
+<p>Thanks to <em>getTxid</em> function, we can create a map to store some transactions in source format, and used <em>txid</em> as a key.</p>
+
+<pre><code><span>var dbtrx = {}; // our transaction table</span>
+<span>dbtrx[txid] = transaction;</span>
+</code></pre>
+
+<h3  id="Digital signature">Digital signature</h3>
+<h4   id="Cryptographic keys">Cryptographic keys</h4>
+<p>A digital signature of a transaction is an encryption of the transaction hash calculated with a secret key. This secret key is called the private key. The signature of the transaction can be verified with an associated public key. The digital signature proves that the transaction has not been altered, and that transaction has been issued by the owner of the private key.</p>
+
+<p>The algorithm <em>secp256k1</em>, based on elliptic curves (also known as 'ECDSA': Elliptic Curve Digital Signature Algorithm), is used for digital signature of transactions. This algorithm allows to generate a new pair of encryption keys: a private key and a public key. The private key is a 256 bits number randomly generated. And the public key is calculated from this private key.</p>
+
+<pre><code><span>var secp256k1 = require('secp256k1');</span>
+<span></span>
+<span>var generatePrivateKey = function () {</span>
+<span>    var privateKey;</span>
+<span>    do {</span>
+<span>        privateKey = crypto.randomBytes(32);</span>
+<span>    } while (!secp256k1.privateKeyVerify(privateKey));</span>
+<span>    return privateKey;</span>
+<span>} </span>
+<span></span>
+<span>var alicePrivateKey  = generatePrivateKey();</span>
+<span>// get the public key in a compressed format</span>
+<span>var alicePublicKey = secp256k1.publicKeyCreate(alicePrivateKey);</span>
+<span></span>
+<span>> alicePrivateKey.toString('hex');</span>
+<span>'27d9b1f6d8567054f1542760ff943d0582e95bd8c1ba08355c02536a5aaac4cc'</span>
+<span></span>
+<span>> alicePublicKey.toString('hex');</span>
+<span>'02c90ad3d07fcc5f92194c7c993ff5b373ce6025b23720f028a2ee1c3aaf97346f'</span>
+</code></pre>
+
+<h4   id="Bitcoin address">Bitcoin address</h4>
+<p>A pubkeyHash is a double hash code of a public key. The first hash code is the result of the SHA256 algorithm, and the second hash code is the result of the RIPEMD160 algorithm which produces a shorter hash code on 160 bits. The bitcoin address is a base 58 encoding of the pubkeyHash and is transmitted by the payee to assign bitcoins. The base 58 encoding produces a code that is human readable and avoids error for transmission. We can note that the public key remains secret until the bitcoins are spent, and thus reinforce the security.</p>
+
+<pre><code><span>var sha256 = function(buffer) { </span>
+<span>    var f = crypto.createHash("SHA256"); </span>
+<span>    var h = f.update(buffer); </span>
+<span>    return h.digest(); </span>
+<span>}; </span>
+<span></span>
+<span></span>
+<span>var ripemd160 = function(buffer) { </span>
+<span>    var f = crypto.createHash("RIPEMD160"); </span>
+<span>    var h = f.update(buffer); </span>
+<span>    return h.digest(); </span>
+<span>}; </span>
+<span></span>
+<span>var pubkeyHash = function (publicKey) {</span>
+<span>   return ripemd160(sha256(publicKey));</span>
+<span>}</span>
+<span></span>
+<span>var bs58 = require('bs58'); </span>
+<span></span>
+<span>var toAddress = function (pubkeyHash) { </span>
+<span>    var hash2 = Buffer.concat([Buffer.alloc(1), new Buffer(pubkeyHash, 'hex')]); </span>
+<span>    var hash3 = sha256(sha256(hash2));</span>
+<span>    var checksum = Buffer.alloc(4);</span>
+<span>    hash3.copy(checksum,0,0,4);</span>
+<span>    return bs58.encode(Buffer.concat([hash2, checksum]));</span>
+<span>}; </span>
+<span></span>
+<span>var publicKeyHexa = '0275e9b1369179c24935337d597a06df0e388b53e8ac3f10ee426431d1a90c1b6e'; </span>
+<span>toAddress (pubkeyHash(new Buffer (publicKeyHexa, 'hex')));</span>
+<span>'17LdBoiECBncjLKva762PAXHhb4hEsbfmz'</span>
+</code></pre>
+
+<h4  id="Digital signature2">Digital signature</h4>
+<p>We can create a digital signature of a transaction with our private key, and double hash code of the transaction:</p>
+
+<pre><code><span>var hashcode = sha256 (sha256 (serializeTransaction(transaction)));</span>
+<span>var signature = secp256k1.sign(hashcode, alicePrivateKey).signature;</span>
+<span>> signature.toString('hex');</span>
+<span>'52990ea17ba23c88af7fc762644e3d1c5338a2e432142dae2b09576d259527aa...</span>
+<span>></span>
+</code></pre>
+
+<p>We can verify that the signature is valid according to the public key and the <em>hashcode</em> itself:</p>
+
+<pre><code><span>> secp256k1.verify(hashcode, signature, alicePublicKey);</span>
+<span>true</span>
+</code></pre>
+
+<p>Attempting to use another public key leads also to a verification failure:</p>
+
+<pre><code><span>var bobPrivateKey = generatePrivateKey();</span>
+<span>var bobPublicKey = secp256k1.publicKeyCreate(bobPrivateKey);</span>
+<span>> secp256k1.verify(hashcode, signature, bobPublicKey);</span>
+<span>false</span>
+</code></pre>
+
+<p>Attempting to alter a transaction leads to a verification failure:</p>
+
+<pre><code><span>transaction.paymentOrder = "Alice promises to pay the sum of 1000 Bitcoins to Bob";</span>
+<span>hashcode = hash(serializeTransaction(transaction));</span>
+<span>> secp256k1.verify(hashcode, signature, alicePublicKey);</span>
+<span>false</span>
+</code></pre>
+
+<h4  id="Distinguished Encoding Rules">Distinguished Encoding Rules</h4>
+<p>A signature is a sequence of two integers called R and S. For a transaction, this sequence is serialized using DER (Distinguished Encoding Rules) convention:</p>
+<ul>
+<li>A sequence begins with byte 0x30, followed by the total number of bytes of the sequence, and followed by the items.</li>
+<li>A number begins with byte 0x02 followed by the size of the number in bytes, and followed by the number itself using a Big-Endian convention.</li>
+</ul>
+<p>Example of a signature using DER:</p>
+
+<pre><code><span>var signatureDER = </span>
+<span>      "3045" // sequence (0x30) of 69 (0x45) bytes</span>
+<span>    + "0221" // fist item 'R' is an integer (0x02) of 33 (0x21 ) bytes</span>
+<span>    + "009eb819743dc981250daaaab0ad51e37ba47f7fb4ace61f6a69111850d6f29905"</span>
+<span>    + "0220" // second item 'S' is an integer (0x02) of 32 (0x20) bytes</span>
+<span>    + "6b6e59e1c002a4e35ba2be4d00366ea0f3e0b14c829907920705bce336ab2945"</span>
+</code></pre>
+
+<p>To use a DER signature, secp256k1 package provides the signatureImport function:</p>
+
+<pre><code><span>var signature = secp256k1.signatureImport(signatureDER); // Decode a DER signature</span>
+</code></pre>
+
+<h3  id="Structure of a transaction">Structure of a transaction</h3>
+<h4  id="Assets">Assets</h4>
+<p>A transaction records bitcoins transfers between participants. We call "asset" an amount in bitcoins that has been assigned to a user. An asset materializes:</p>
+<ul>
+<li>cash when it has not yet been spent,</li>
+<li>a payment, similar to a cheque, when a transaction has just been created, and is transferred as a message,</li>
+<li>a ledger entry, when a transaction has been recorded in a block of the blockchain.</li>
+</ul>
+<h4  id="Input and output tables">Input and output tables</h4>
+<p>The Bitcoin transaction consists of two tables, the input table, which lists the assets spent by one or more payers and the outputs table, which lists new assets assigned to one or more payees. When a payee wants to use an asset as a payer, a new transaction is created, and that asset will appear in the new input table. Each input table entry references an asset of an output table entry of a previous transaction. This reference consists of the identifier of the transaction that assigned it, and an entry number in the output table.</p>
+
+<p>The total amount of assets allocated may be less than the sum of the assets spent. If there is a difference, this difference will be automatically assigned to the miner who recorded the transaction in a block. This difference will be considered as a transaction fee.</p>
+
+<p>The diagram below shows the structure of a transaction and the locks set with the user's private keys.</p>
+
+<img src="transactions-en-v2.png"/>
+
+<p>A Bitcoin address will act as an account number associated with an asset: the public key is obfuscated with a double hashing and encoded in an alphanumeric to facilitate the communication by the payee to the payer.</p>
+
+<p>To receive a payment, the payee generates a private key, a public key is calculated and transformed into a Bitcoin address, which will be communicated to the payer, to add output entries of the new transaction.</p>
+
+<p>To make a payment, the payer creates a new transaction, to assign bitcoins to the payee Bitcoin address, and to collect unspent assets for this expense. For each collected asset, an entry of the input table will be created. This entry references an unspent asset by the identifier of a previous transaction and the entry number in the output table of this previous transaction. Then, two certification data are added:</p>
+<ul>
+<li><strong>The public key</strong>:
+<ul>
+  <li>it unlocks the unspent asset of the previous transaction, as the public key must match the Bitcoin address,</li>
+  <li>it allows to verify the signature to spend this asset. If the signature has been created with another public / private key pair, network agents will invalidate the transaction</li>
+</ul>
+</li>
+<li><strong>The signature</strong>: it plays two roles,
+<ul>
+<li>it attests that the user owning the private key has confirmed this expense (principle of non-repudiation ). Indeed, the signature can be calculated only with the private key, but can be verified with the public key.</li>
+<li>it locks the expense for this transaction (principle of integrity ).</li>
+</ul>
+</li>
+</ul>
+<p>Thus only the owner of the private key will be able to generate the Bitcoin address for a new assignment, and will be able to provide the information that allows the expense. The transactions are chained together because they set the identifier of the previous transactions, making it possible to trace the origin of an asset to the initial transaction that created the ex-nihilo bitcoins.</p>
+
+<p>The cryptographic signature algorithm allows each agent of the network that broadcasts this transaction or records it in a block, to check the consistency of the address, the public key and the signature; without having access to the private key.</p>
+
+<h4  id="Combining and splitting assets">Combining and splitting assets</h4>
+<p>In its simplest form, with a single payer and a single payee, the transaction transfers the entire asset from one user to another. However, the representation of transactions is flexible enough to cover other payment cases:</p>
+<ul>
+<li><strong>By specifying several assets of the same payer</strong>, the transaction allows to combine assets to reach the sum expected by the payee.</li>
+<li><strong>By adding the payer among the payee</strong>, the transaction allows to use a previously allocated asset, which exceeds the amount expected by the payee, and create a new asset in order to return the change to the payer.</li>
+<li><strong>By specifying several payees</strong>, it is also possible to combine two purchases into a single transaction; for example to pay for a flight and a hotel room.</li>
+<li><strong>Finally, by specifying several payers</strong>, it is possible to sum the assets of these payers for a single payment.</li>
+</ul>
+<h4  id="Initial transaction">Initial transaction</h4>
+<p>A single type of transaction derogates from this representation, these are the initial transactions, named "coinbase transactions". These transactions only create an ex-nihilo asset to pay the "miners" who allocate their computing power to create the blockchain.</p>
+
+<h4  id="Electronic wallet">Electronic wallet</h4>
+<p>The structure of the transaction is managed by the bitcoin wallet. This wallet collects all available assets of a user; i.e. assets not yet spent. As a bank account, it makes it possible to get the balance in bitcoins. To make a payment, the software creates the transaction based on the amount to be paid and the available assets.</p>
+
+<h3  id="Scripts">Scripts</h3>
+<p>Public keys and signatures are actually stored as fragments of scripts that will be executed by agents to perform the check of a transaction. This script is not of the Bitcoin software, but inserted in the transactions. The execution of these scripts will result in the checks described above.</p>
+
+<p>These scripts allow user to define other payment methods such as multiple signing to authorize the expense of an asset.</p>
+
+<p>One of these payment methods is to inject data into the transaction. The assets in bitcoins is then "transformed" into data. The injected data becomes a certified and publicly available (proof-of-existence) information. For example, this data may be the cryptographic hash code of a document, the integrity of this document is then certified without the involvement of a trusted third party. This payment is called "bitcoins burning" because the bitcoins spent are replaced with data, and are no longer available for a next payment.</p>
+
+<h4  id="Stack based virtual machine">Stack based virtual machine</h4>
+<p>A script is a set of instructions for a stack based virtual machine. A stack based virtual machine uses a stack as memory. Any instruction reads/writes operands from/to this stack.</p>
+
+<pre><code><span>var OP_ADD = 0x93;</span>
+<span>var OP_DUP = 0x76; </span>
+<span>var script = [numberToInt32LE(16), OP_DUP, OP_ADD];</span>
+</code></pre>
+
+<p>The script above will perform the following operations:</p>
+
+<table>
+<tr><td>Instruction Pointer</td><td>Instruction</td><td>Operations</td><td>Stack after operations</td></tr>
+<tr><td>0</td><td>10000000</td><td>Push 0x10 on the top of the stack</td><td>16 &lt;- top</td></tr>
+<tr><td>1</td><td>OP_DUP</td><td>Duplicate the top of the stack</td><td>16 &lt;- top, 16</td></tr>
+<tr><td>2</td><td>OP_ADD</td><td>Pop a first operand from the top of the stack, Pop a second operand from the top of the stack, Add the two operands, Push the result on top of the stack.</td><td>32 &lt;- top</td></tr>
+</table>
+<p>This script starts with an empty stack and stops with a stack containing the 0x20 value. By default, at the end of this script execution, the virtual machine is stopped with a return value 'true'. However, some checking operations may end the script execution with a result value of 'false' when they fail.</p>
+
+<h4  id="Script Compilation">Script Compilation</h4>
+<p>Each instruction is coded with a single byte, this byte is called the opcode (operation code). A statement which opcode is lower or equal to number 0x75 specifies a number of next bytes to push onto the stack as data.</p>
+
+<p>The code below compile a script source code:</p>
+
+<pre><code><span>var compileScript = function(program) {</span>
+<span>    var buffers = [];</span>
+<span>    var bytes = 0;</span>
+<span>    for (var i = 0, len = program.length; i < len; i++) {</span>
+<span>        var code = program[i];</span>
+<span>        var type = typeof(code);</span>
+<span>        switch (type) {</span>
+<span>            case 'number': </span>
+<span>                buffers.push(numberToInt8(code));</span>
+<span>                bytes++;</span>
+<span>                break;</span>
+<span>            case 'object': // already encoded</span>
+<span>                operand = code;</span>
+<span>                buffers.push(numberToInt8(operand.length));</span>
+<span>                buffers.push(operand);</span>
+<span>                bytes += operand.length + 1;</span>
+<span>                break;</span>
+<span>            case 'string': // not yet encoded</span>
+<span>                var operand = new Buffer(code, 'hex');</span>
+<span>                buffers.push(numberToInt8(operand.length));</span>
+<span>                buffers.push(operand);</span>
+<span>                bytes += operand.length + 1;</span>
+<span>                break;</span>
+<span>        }        </span>
+<span>    }</span>
+<span>    buffers.unshift(numberToInt8(bytes));</span>
+<span>    return Buffer.concat(buffers);</span>
+<span>};</span>
+<span></span>
+<span>var script = [numberToInt32LE(16), OP_DUP, OP_ADD];</span>
+<span> > compileScript(script).toString("hex")</span>
+<span>'0704100000007693'</span>
+</code></pre>
+
+<h4  id="Script execution">Script execution</h4>
+<p>We create a <em>runScript</em> function to interpret the previous compiled code. This interpreter will be limited to 2 opcodes: OP_DUP and OP_ADD. Operands of arithmetic operations are signed integers on 32 bits, encoded with Little-Endian convention.</p>
+
+<pre><code><span>var runScript = function (program, stack) {</span>
+<span>    var operand;</span>
+<span>    var operand1;</span>
+<span>    var operand2;</span>
+<span>    var ip = 0; // instruction pointer</span>
+<span></span>
+<span>    var last = program[ip++];</span>
+<span>    while (ip <= last) {</span>
+<span>        var instruction = program[ip++];</span>
+<span>        switch (instruction) {</span>
+<span>            case OP_DUP:</span>
+<span>                operand = stack.pop();</span>
+<span>                stack.push(operand);</span>
+<span>                stack.push(operand);</span>
+<span>                break;</span>
+<span>            case OP_ADD:</span>
+<span>                operand1 = stack.pop().readInt32LE();</span>
+<span>                operand2 = stack.pop().readInt32LE();</span>
+<span>                stack.push(numberToInt32LE(operand1 + operand2));</span>
+<span>                break;</span>
+<span>            default:</span>
+<span>                var size = instruction;</span>
+<span>                var data  = new Buffer(size);</span>
+<span>                program.copy(data, 0, ip, ip+size);</span>
+<span>                stack.push(data);</span>
+<span>                ip += size;</span>
+<span>                break;</span>
+<span>        }</span>
+<span>    }</span>
+<span>    return true;</span>
+<span>};</span>
+<span></span>
+<span>var stack = [];</span>
+<span>var script = compileScript ([numberToInt32LE(16), OP_DUP, OP_ADD]);</span>
+<span>var result = runScript (script, stack);</span>
+<span>> result</span>
+<span>true</span>
+<span>> stack[0].readInt32LE()</span>
+<span>> 32</span>
+</code></pre>
+
+<h3  id="Verify a payment">Verify a payment</h3>
+<p>Verifying a payment is the result of a script execution. This script is split into two parts:</p>
+
+<ul>
+<li>The first one is located in the input table entry of the new transaction, it contains the digital signature and the public key proving that the payer owns the asset assigned in the output table of a previous transaction.</li>
+<li>The second one is located in the output table entry of the previous transaction, it implements an algorithm to verify the payment of the output asset.</li>
+</ul>
+
+<h4  id="Hash type">Hash type</h4>
+<p>The effective digital signature is ended by a hash type. The hash type is an indicator of the scope of the transaction to hash. In this paper we will use only the SIGHASH_ALL indicator.</p>
+
+<p>Using the SIGHASH_ALL mode, each entry of the input table is verified one by one. For each entry, a transaction hash is calculated on a transaction altered as follow:</p>
+
+<ul>
+<li>all scripts are set to 0,</li>
+<li>the script of the input entry is replaced with the corresponding output script.</li>
+</ul>
+
+<h4  id="Running the verification">Running the verification</h4>
+<p>The full script contains the following statements (we indicate atomic actions on the stack between brackets for operations):</p>
+
+<pre><code><span>                                                      New Transaction</span>
+<span>                                                        Input script</span>
+<span>                                                  +---------------------+</span>
+<span>                                                  |signature            |</span>
+<span>                                                  |    (push signature) |</span>
+<span>                                                  +---------------------+</span>
+<span>              Previous Transaction                |public key           |</span>
+<span>                 Output script                    |    (push public key)| </span>
+<span>+-------------------------------------------------+---------------------+</span>
+<span>|OP_DUP                                           | </span>
+<span>|    (pop public key)                             |</span>
+<span>|    (push public key)                            |</span>
+<span>|    (push public key)                            |</span>
+<span>+-------------------------------------------------+</span>
+<span>|OP_HASH160                                       |</span>
+<span>|    (pop public key)                             |</span>
+<span>|    (push address)                               |</span>
+<span>+-------------------------------------------------+</span>
+<span>|address                                          |</span>
+<span>|    (push address)                               |</span>
+<span>+-------------------------------------------------+</span>
+<span>|OP_EQUAL_VERIFY                                  |  </span>
+<span>|    (pop address)                                |</span>
+<span>|    (pop address)                                |</span>
+<span>|    (check equality)                             |</span>
+<span>+-------------------------------------------------+</span>
+<span>|OP_CHECKSIG                                      | </span>
+<span>|    (pop public key)                             |</span>
+<span>|    (pop signature + hash type)                  |</span>
+<span>|    (hash transaction according to hash type)    |</span>
+<span>|    (verify signature with public key            |</span>
+<span>|            and transaction hash)                |</span>
+<span>+-------------------------------------------------+</span>
+</code></pre>
+
+<h3  id="Code to verify a payment of block #266632">Code to verify a payment of block #266632</h3>
+<p>The whole code verifies the first payment of the following actual Bitcoin transaction :</p>
+<ul>
+<li><a href="https://blockchain.info/tx/9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4">9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4 (blockchain.info)</a></li>
+<li><a href="https://blockexplorer.com/tx/9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4">9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4 (blockexplorer)</a></li>
+</ul>
+<p>You will find the binary representation of this transaction with <a href="https://blockchain.info/tx/9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4?format=hex">blockchain.info</a></p>
+
+<pre><code><span>var crypto = require('crypto');</span>
+<span>var secp256k1 = require('secp256k1');</span>
+<span></span>
+<span>var sha256 = function(buffer) { </span>
+<span>    var f = crypto.createHash("SHA256"); </span>
+<span>    var h = f.update(buffer);</span>
+<span>    return h.digest(); </span>
+<span>};</span>
+<span></span>
+<span>var ripemd160 = function(buffer) { </span>
+<span>    var f = crypto.createHash("RIPEMD160"); </span>
+<span>    var h = f.update(buffer);</span>
+<span>    return h.digest(); </span>
+<span>};</span>
+<span></span>
+<span></span>
+<span>Buffer.prototype.toReverseHexaNotation = function () {</span>
+<span>    var hexa = "";</span>
+<span>    for (var i = this.length-1; i >= 0; i--) {</span>
+<span>       var digits =  this[i].toString(16);</span>
+<span>        hexa += ("0" + digits).slice(-2); // Add "0" for single digit</span>
+<span>    }</span>
+<span>    return hexa;     </span>
+<span>};</span>
+<span></span>
+<span>var numberToInt8 = function (n) {</span>
+<span>    return new Buffer([n]);</span>
+<span>};</span>
+<span></span>
+<span>var numberToInt32LE = function (n) {</span>
+<span>    var buffer = new Buffer(4);</span>
+<span>    buffer.writeUInt32LE(n,0);</span>
+<span>    return buffer;</span>
+<span>};</span>
+<span></span>
+<span>var numberToInt64LE = function (n) {</span>
+<span>   var buffer = new Buffer(8);</span>
+<span>   buffer.writeUInt32LE(n % 0xFFFFFFFFFFFFFFFF, 0);</span>
+<span>   buffer.writeUInt32LE(Math.floor(n / 0xFFFFFFFFFFFFFFFF), 4);</span>
+<span>   return buffer;</span>
+<span>};</span>
+<span></span>
+<span>var serializeAmount = function (amount) {</span>
+<span>    return numberToInt64LE(amount * 100000000);</span>
+<span>};</span>
+<span></span>
+<span>var hexaNotationToInt256LE = function (hexa) {</span>
+<span>    var bytes = new Array(32);</span>
+<span>    for (var i = 0, j = 31, len = hexa.length; i < len; i+=2, j--) {</span>
+<span>        bytes[j] = parseInt(hexa[i]+hexa[i+1],16);</span>
+<span>    }    </span>
+<span>    return new Buffer(bytes);</span>
+<span>};</span>
+<span></span>
+<span></span>
+<span>var      OP_ADD         = 0x93;</span>
+<span>var      OP_DUP         = 0x76;</span>
+<span>var      OP_HASH160     = 0xa9;</span>
+<span>var      OP_EQUALVERIFY = 0x88;</span>
+<span>var      OP_CHECKSIG    = 0xac;</span>
+<span></span>
+<span></span>
+<span>var serializeTransaction = function(tr) {</span>
+<span>    var buffers = [];</span>
+<span>    buffers.push(numberToInt32LE(tr.version));</span>
+<span>    buffers.push(serializeInputs(tr.inputs));</span>
+<span>    buffers.push(serializeOutputs(tr.outputs));</span>
+<span>    buffers.push(numberToInt32LE(tr.lockTime));</span>
+<span>    if (tr.hashType) </span>
+<span>        buffers.push(numberToInt32LE(Number(tr.hashType)));</span>
+<span>    return Buffer.concat(buffers);</span>
+<span>};</span>
+<span></span>
+<span>var serializeInputs = function (inputs) {</span>
+<span>    var buffers = [];</span>
+<span></span>
+<span>    var inputsSize = inputs.length;</span>
+<span>    buffers.push(numberToInt8(inputsSize));</span>
+<span></span>
+<span>    for (var i = 0; i < inputsSize; i++) {</span>
+<span>        var input = inputs[i];</span>
+<span></span>
+<span>        buffers.push(hexaNotationToInt256LE(input.txid));</span>
+<span>        buffers.push(numberToInt32LE(input.index));</span>
+<span>        buffers.push(compileScript(input.script));</span>
+<span>        buffers.push(numberToInt32LE(0xffffffff));</span>
+<span>    }    </span>
+<span>    return Buffer.concat (buffers);        </span>
+<span>};</span>
+<span></span>
+<span>var serializeOutputs = function (outputs) {</span>
+<span>    var buffers = [];</span>
+<span></span>
+<span>    var outputsSize = outputs.length;</span>
+<span>    buffers.push(numberToInt8(outputsSize));</span>
+<span>    for (var i = 0; i < outputsSize; i++) {</span>
+<span>        var output = outputs[i];</span>
+<span>        buffers.push(serializeAmount(output.amount));</span>
+<span>        buffers.push(compileScript(output.script));</span>
+<span>    }</span>
+<span>    return Buffer.concat (buffers);        </span>
+<span>};    </span>
+<span></span>
+<span>var compileScript = function(program) {</span>
+<span>    var buffers = [];</span>
+<span>    var bytes = 0;</span>
+<span>    for (var i = 0, len = program.length; i < len; i++) {</span>
+<span>        var code = program[i];</span>
+<span>        var type = typeof(code);</span>
+<span>        switch (type) {</span>
+<span>            case 'number': </span>
+<span>                buffers.push(numberToInt8(code));</span>
+<span>                bytes++;</span>
+<span>                break;</span>
+<span>            case 'string':</span>
+<span>                var operand = new Buffer(code, 'hex');</span>
+<span>                buffers.push(numberToInt8(operand.length));</span>
+<span>                buffers.push(operand);</span>
+<span>                bytes += operand.length + 1</span>
+<span>                break;</span>
+<span>        }        </span>
+<span>    }</span>
+<span>    buffers.unshift(numberToInt8(bytes));</span>
+<span>    return Buffer.concat(buffers);</span>
+<span>};</span>
+<span></span>
+<span>// A simple virtual machine to run a decoded P2SH (Pay to Script Hash) scripts</span>
+<span></span>
+<span></span>
+<span></span>
+<span>var runScript = function (program, stack, currentTransaction, currentInputIndex) {</span>
+<span>    var operand;</span>
+<span>    var operand1;</span>
+<span>    var operand2;</span>
+<span>    var ip = 0; // instruction pointer</span>
+<span>    var last = program[ip++];</span>
+<span>    while (ip <= last) {</span>
+<span>        var instruction = program[ip++];</span>
+<span></span>
+<span>        switch (instruction) {</span>
+<span>            case OP_DUP:</span>
+<span>                operand = stack.pop();</span>
+<span>                stack.push(operand);</span>
+<span>                stack.push(operand);</span>
+<span>                break;</span>
+<span></span>
+<span>             case OP_ADD:</span>
+<span>                operand1 = stack.pop().readInt32LE();</span>
+<span>                operand2 = stack.pop().readInt32LE();</span>
+<span>                stack.push(numberToInt32LE(operand1 + operand2));</span>
+<span>                break;</span>
+<span></span>
+<span>            case  OP_HASH160:</span>
+<span>                operand = stack.pop();</span>
+<span>                stack.push(ripemd160(sha256(operand)));</span>
+<span>                break;</span>
+<span></span>
+<span>            case  OP_EQUALVERIFY:</span>
+<span>                operand1 = stack.pop();</span>
+<span>                operand2 = stack.pop();</span>
+<span>                if (! operand1.compare(operand2) == 0) return false;</span>
+<span>                break;</span>
+<span></span>
+<span>            case  OP_CHECKSIG:</span>
+<span>                operand1 = stack.pop();</span>
+<span>                operand2 = stack.pop();</span>
+<span></span>
+<span>                // operand 1 is Public Key</span>
+<span>                var publicKey = operand1;</span>
+<span></span>
+<span>                // operand 2 contains hashType                </span>
+<span>                var hashType = operand2[operand2.length-1]; //get last byte of signature</span>
+<span></span>
+<span>                // operand 2 contains DER Signature</span>
+<span>                var signatureDER = operand2.slice(0,-1);</span>
+<span>                var signature = secp256k1.signatureImport(signatureDER); // Decode a signature in DER format</span>
+<span></span>
+<span>                // recover signed transaction and hash of this transaction</span>
+<span>                var copy = copyForSignature(currentTransaction, currentInputIndex, hashType);</span>
+<span>                var buffer = serializeTransaction(copy);</span>
+<span>                var hashcode = sha256 (sha256 (buffer));</span>
+<span></span>
+<span>                // Check signature</span>
+<span>                if (! secp256k1.verify(hashcode, signature, publicKey)) return false;</span>
+<span>                break;</span>
+<span></span>
+<span>            default:</span>
+<span>                var size = instruction;</span>
+<span>                var data  = new Buffer(size);</span>
+<span>                program.copy(data, 0, ip, size+ip);</span>
+<span>                stack.push(data);</span>
+<span>                ip += size;</span>
+<span>                break;</span>
+<span>        }</span>
+<span>    }</span>
+<span>    return true;</span>
+<span>};</span>
+<span></span>
+<span>var SIGHASH_ALL          = "01";</span>
+<span>var SIGHASH_NONE         = "02";</span>
+<span>var SIGHASH_SINGLE       = "03";</span>
+<span>var SIGHASH_ANYONECANPAY = "80";</span>
+<span></span>
+<span>// We create a previous transaction with an output</span>
+<span>// We skip other data that are not required for validation</span>
+<span></span>
+<span>var previousTransaction = {</span>
+<span>    version: 1,</span>
+<span>    inputs: {}, // missing actual data here</span>
+<span>    outputs: [</span>
+<span>        {}, // missing output[0]</span>
+<span>        {</span>
+<span>            amount: 0.09212969, </span>
+<span>            script: [</span>
+<span>                OP_DUP,</span>
+<span>                OP_HASH160,</span>
+<span>                '4586dd621917a93058ee904db1b7a43bfc05910a',</span>
+<span>                OP_EQUALVERIFY,</span>
+<span>                OP_CHECKSIG </span>
+<span>            ]</span>
+<span>        }</span>
+<span>    ],</span>
+<span>    lockTime: 0</span>
+<span>}; </span>
+<span></span>
+<span>var transaction = {</span>
+<span>   version: 1,</span>
+<span>   inputs: [</span>
+<span>        {</span>
+<span>            txid: "14e5c51d3bc1cf0d29f2457d61fbf8d6567883e0711f9877795783d2105b50c9",</span>
+<span>            index: 1,</span>
+<span></span>
+<span>            script: [</span>
+<span>                  "3045" </span>
+<span>                + "0221"</span>
+<span>                + "009eb819743dc981250daaaab0ad51e37ba47f7fb4ace61f6a69111850d6f29905"</span>
+<span>                + "0220"</span>
+<span>                + "6b6e59e1c002a4e35ba2be4d00366ea0f3e0b14c829907920705bce336ab2945" // signature</span>
+<span>                +  SIGHASH_ALL,    // hashtype </span>
+<span></span>
+<span>                "0275e9b1369179c24935337d597a06df0e388b53e8ac3f10ee426431d1a90c1b6e" // Public Key</span>
+<span>            ]</span>
+<span>        },</span>
+<span>        { </span>
+<span>            txid: "5b7aeedc2e82c9646408ce0588d9f98d2107062e9291af0e9e6fa372b0d7d1fb",</span>
+<span>            index: 1,</span>
+<span></span>
+<span>            script: [</span>
+<span>                  "3045"</span>
+<span>                + "0220"</span>
+<span>                + "35a9e444883acaaae166d2ee1389272424ec7885f4210aaf118fee58b5683445"</span>
+<span>                + "0221"</span>
+<span>                + "00e40624a0df47943aa5ee63d8997dd36c5da44409ccc4dafcbfabc96a020d971c" // signature</span>
+<span>                + SIGHASH_ALL,   // hashtype</span>
+<span></span>
+<span>                "033b18e24fb031dae396297516a54f3e46cc9902adfd1b8edea0d6a01dab0e027d" // Public Key</span>
+<span>            ]</span>
+<span>        }  </span>
+<span>   ],</span>
+<span>   outputs: [</span>
+<span>        {</span>
+<span>            amount: 0.05580569,</span>
+<span>            script: [</span>
+<span>                    OP_DUP, </span>
+<span>                    OP_HASH160, </span>
+<span>                    '4753945f3b34d6ca3fedcf41bf499c13d20bfec4',</span>
+<span>                    OP_EQUALVERIFY,  </span>
+<span>                    OP_CHECKSIG</span>
+<span>            ],</span>
+<span>        },</span>
+<span>        {</span>
+<span>            amount: 0.1,</span>
+<span>            script: [</span>
+<span>                    OP_DUP, </span>
+<span>                    OP_HASH160, </span>
+<span>                    '81a9e7d0ab008005d36c61563a178ad20a3a5224',</span>
+<span>                    OP_EQUALVERIFY, </span>
+<span>                    OP_CHECKSIG</span>
+<span>            ],</span>
+<span>        }    </span>
+<span>   ],    </span>
+<span>   lockTime: 0</span>
+<span>};</span>
+<span></span>
+<span></span>
+<span>var dbtx = {};</span>
+<span>dbtx["14e5c51d3bc1cf0d29f2457d61fbf8d6567883e0711f9877795783d2105b50c9"] = previousTransaction;</span>
+<span>dbtx["9e9f1efee35b84bf71a4b741c19e1acc6a003f51ef8a7302a3dcd428b99791e4"] = transaction;</span>
+<span></span>
+<span>var copyForSignature = function(transaction, inputIndex, hashType) {</span>
+<span>    var copy = Object.assign({}, transaction);</span>
+<span></span>
+<span>    var inputs = copy.inputs;</span>
+<span>    for (var i = 0, len = inputs.length; i < len; i++) {</span>
+<span>        inputs[i].script = []; // reset script to nothing</span>
+<span>    }</span>
+<span></span>
+<span>    var currentInput = inputs[inputIndex];</span>
+<span></span>
+<span>    var previousTransaction =  dbtx[currentInput.txid];</span>
+<span>    var previousOutput =previousTransaction.outputs[currentInput.index];</span>
+<span></span>
+<span>    currentInput.script = previousOutput.script;</span>
+<span></span>
+<span>    copy.hashType = hashType;</span>
+<span>    return copy;</span>
+<span>};</span>
+<span></span>
+<span>var validateInput = function (transaction, inputIndex) {</span>
+<span>    var stack = [];</span>
+<span></span>
+<span>    var input = transaction.inputs[inputIndex];</span>
+<span>    var previousTransaction =  dbtx[input.txid];</span>
+<span>    var previousOutput =previousTransaction.outputs[input.index];</span>
+<span></span>
+<span>    var program1 = compileScript(input.script);</span>
+<span>    var program2 = compileScript(previousOutput.script);</span>
+<span></span>
+<span>    var result = runScript (program1, stack, transaction, inputIndex);</span>
+<span>    if (result) result = runScript (program2, stack, transaction, inputIndex);</span>
+<span>    console.log(stack);</span>
+<span>    return result;</span>
+<span>};</span>
+<span></span>
+<span>var currentTransaction = transaction;</span>
+<span>var currentInputIndex  = 0;</span>
+<span>console.log(validateInput(currentTransaction, currentInputIndex));</span>
+</code></pre>
+
+<h1  id="Double-spending Fraud">Double-spending Fraud</h1>
+<h3  id="principle">Principle</h3>
+
+<p>The double-spending fraud consists of issuing two transactions that spend the same asset: the first transaction is issued to pay a first payee, the second transaction is issued to pay an accomplice or the attacker himself, in order to recover the sum expended.</p>
+
+<p>So that the fraud is not immediately discovered, these two transactions must coexist in two competing instances of the blockchain. The second instance must become the longest blockchain for the fraud to succeed. In this case, the first transaction will be considered invalid because it is incompatible with the second transaction and will ultimately be rejected. If, between the two transactions, the first payee has accepted the payment, he will find out afterwards that this transaction has been rejected. Since the participants are anonymous, they can not turn against the attacker.</p>
+
+<h3  id="prevention">Prevention</h3>
+
+<p>To ensure that fraud does not occur, the payee must ensure that the transaction issued by the payer is properly registered in a block of the longest blockchain instance and that this instance is sustainable. Therefore, it must wait until a sufficient number of blocks succeed the block that records this transaction, before accepting the payment.</p>
+
+<p>The Merkle tree structure of a block makes it possible to restore a lightened block. The payee can thus verify a transaction without having to download the full contents of the blocks.</p>
+
+<p>If the number of successor blocks is high enough and the attacker does not have more than 51% of the total computational power then the risk of double-spending tends to zero (see Satoshi Nakamoto's demonstration based on probability of Poisson).</p>
+
+<h3  id="merkle-tree">The Merkle Tree</h3>
+
+<p>The Merkle Tree is a temporary structure used to calculate an hash code representing the full content of a block.</p>
+
+<p>The example below is based on block #259558: <a href="https://blockchain.info/block-height/259558">https://blockchain.info/block-height/259558</a></p>
+
+<p>We define a MerkleTree as an array. The index = 0 is the bottom of the array, and index = 4 will be the top.</p>
+
+<pre><code><span>var merkleTree = [];</span>
+</code></pre>
+
+<p>At the bottom level we find the trxid of each transaction:</p>
+
+<pre><code><span>merkleTree[0] = [</span>
+<span>  hexaNotationToInt256LE("28042ae489817ceef06fe6d6edc5a1d2bd5c5039879ebed9ede7bea96d12a221"),</span>
+<span>  hexaNotationToInt256LE("c4c6e447c2433bcbd8de014d565fb83261fc438a76f327ef0edb1eb27524d58d"),</span>
+<span>  hexaNotationToInt256LE("e6d5b04eeda4992af8a0c2510ef7cff8b957a20f93882351e02c9c444dc7c807"),</span>
+<span>  hexaNotationToInt256LE("0a30133d85d8326a77a8d8077afed26be0395fd6cb8e1de254687d9fb6f06afa"),</span>
+<span>  hexaNotationToInt256LE("ab4a4bbe5ab15c14eec0f367263d20d00e5fda99749266afc61f86ecb9a8910c"),</span>
+<span>  hexaNotationToInt256LE("d99746c0551960bb08368389657291f61dece035c9926234afc3bc577825f30e"),</span>
+<span>  hexaNotationToInt256LE("8d9f78c42a28e81167c6c07aa08265b4188f370e16af0a1dfac191139f6ce62e"),</span>
+<span>  hexaNotationToInt256LE("9ea864c2e95255f1998b114ecb235735bd5e679f276bb60a57ad92c28ad9353a"),</span>
+<span>  hexaNotationToInt256LE("a4ad325cd9ae4925864a9bbff0feb596d1f666fb4a0e95db9931ba5fd56bc854")</span>
+<span>];</span>
+</code></pre>
+
+<p>The level #1 is the hash code of a pair of trxid. As we do not have an even number of trxid, the last one is duplicated:</p>
+
+<pre><code><span>merkleTree[1] = </span>
+<span>[</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[0][0], merkleTree[0][1]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[0][2], merkleTree[0][3]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[0][4], merkleTree[0][5]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[0][6], merkleTree[0][7]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[0][8], merkleTree[0][8]])))</span>
+<span>];</span>
+</code></pre>
+
+<p>The level #2 is the hash code of a pair of hash code of the first level :</p>
+
+<pre><code><span>merkleTree[2] = </span>
+<span>[</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[1][0], merkleTree[1][1]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[1][2], merkleTree[1][3]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[1][4], merkleTree[1][4]]))),</span>
+<span>];</span>
+</code></pre>
+
+<p>The level #3 follow the same rule:</p>
+
+<pre><code><span>merkleTree[3] = </span>
+<span>[</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[2][0], merkleTree[2][1]]))),</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[2][2], merkleTree[2][2]]))),</span>
+<span>];</span>
+</code></pre>
+
+<p>At last we reach the last level with a single hash code which is the merkle root:</p>
+
+<pre><code><span>merkleTree[4] = </span>
+<span>[</span>
+<span>    sha256(sha256(Buffer.concat([merkleTree[3][0], merkleTree[3][1]]))),</span>
+<span>];        </span>
+<span>> console.log(merkleTree[4][0].toReverseHexaNotation());</span>
+<span>428f81023620f85215ba00ec78c2fade0f5b4f1ebc3b682425462bc6eda34377</span>
+</code></pre>
+
+<h3  id="merkle-path">The Merkle Path</h3>
+
+<p>Starting from a trxid, an providing only the intermediate hash codes, we can recover the calculation path from the trxid to the merkle tree root, proving that this transaction is stored in the block.</p>
+
+<pre><code><span>var trxid = hexaNotationToInt256LE("e6d5b04eeda4992af8a0c2510ef7cff8b957a20f93882351e02c9c444dc7c807");</span>
+<span>var r = sha256(sha256(Buffer.concat([trxid, merkleTree[0][3]])));</span>
+<span>r = sha256(sha256(Buffer.concat([merkleTree[1][0], r])));</span>
+<span>r = sha256(sha256(Buffer.concat([r, merkleTree[2][1]])));</span>
+<span>r = sha256(sha256(Buffer.concat([r, merkleTree[3][1]])));</span>
+<span></span>
+<span>> console.log(r.toReverseHexaNotation());</span>
+<span>428f81023620f85215ba00ec78c2fade0f5b4f1ebc3b682425462bc6eda34377</span>
+</code></pre>
+
+</body>
+</html>
